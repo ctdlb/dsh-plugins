@@ -4,21 +4,29 @@ DeepSeek Harness（DSH）desktop profile 的插件备份。换电脑、重装、
 
 ## 一句话安装
 
-在 DSH 对话框里对 agent 说：
+在 DSH 对话框里对 agent 说（点右边图标复制）：
 
-> **装回插件**
+```
+装回插件
+```
 
 就这四个字。agent 会读本仓库的 `plugins.json`，执行 `dsh plugin --profile desktop add`（11 个包，版本按清单锁死），把 `bundles` 顺序写回 profile，校验 `node_modules`，然后提示你重启。全程不用你碰命令行。
 
-反向操作（把当前已装的插件写回本仓库）说：**同步插件库**。
+反向操作（把当前已装的插件写回本仓库）说：
+
+```
+同步插件库
+```
 
 前提：这台机器上 DSH 能正常启动、agent 有 shell。**DSH 崩了打不开、或新电脑还没装 DSH 时**，用下面这一行。
 
 ### 新电脑第一次
 
-新机器上没有旧的 `AGENTS.md`，agent 不知道这个库存在。第一次由你带上链接说一句：
+新机器上没有旧的 `AGENTS.md`，agent 不知道这个库存在。第一次由你带上链接说一句（点右边图标复制）：
 
-> 装回插件 https://github.com/ctdlb/dsh-plugins
+```
+装回插件 https://github.com/ctdlb/dsh-plugins
+```
 
 agent 读完本页就会自己装。装完把 [AGENTS.md](AGENTS.md) 里那段贴进新机器的 `AGENTS.md`（也可以直接让 agent 追加），之后这台机器也能只靠「装回插件」四个字。
 
