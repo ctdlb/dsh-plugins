@@ -14,6 +14,14 @@ DeepSeek Harness（DSH）desktop profile 的插件备份。换电脑、重装、
 
 前提：这台机器上 DSH 能正常启动、agent 有 shell。**DSH 崩了打不开、或新电脑还没装 DSH 时**，用下面这一行。
 
+### 新电脑第一次
+
+新机器上没有旧的 `AGENTS.md`，agent 不知道这个库存在。第一次由你带上链接说一句：
+
+> 装回插件 https://github.com/ctdlb/dsh-plugins
+
+agent 读完本页就会自己装。装完把 [AGENTS.md](AGENTS.md) 里那段贴进新机器的 `AGENTS.md`（也可以直接让 agent 追加），之后这台机器也能只靠「装回插件」四个字。
+
 ## 命令行安装（没有 agent 时）
 
 在装了 DSH 的机器上打开 PowerShell，粘贴：
