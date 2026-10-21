@@ -1,26 +1,22 @@
 #requires -Version 5.1
 <#
-  Restore DSH (DeepSeek Harness) plugins AND their config from plugins.json.
+  Restore DSH (DeepSeek Harness) plugins from plugins.json.
 
   Usage:
     powershell -ExecutionPolicy Bypass -File install.ps1
     powershell -ExecutionPolicy Bypass -File install.ps1 -DryRun
-    powershell -ExecutionPolicy Bypass -File install.ps1 -SkipInstall   # config only
-    powershell -ExecutionPolicy Bypass -File install.ps1 -SkipConfig    # plugins only
-    powershell -ExecutionPolicy Bypass -File install.ps1 -KeepConfig    # leave existing config alone
+    powershell -ExecutionPolicy Bypass -File install.ps1 -SkipInstall   # bundle order only
 
   What it restores:
     1. every dependency pinned in plugins.json
     2. the bundles load order inside the profile package.json
-    3. every file listed in plugins.json.configFiles
-       (patch layer = model/UI/plugin settings, market state, pnpm workspace exclusions)
-       -> pass -SkipConfig only when the user said NOT to restore the config
 
   Notes:
+    - Plugins ONLY. This script never touches cordis.patch.yml or any other
+      settings file: a stale config snapshot can break a fresh machine, so the
+      repo deliberately stores the plugin list and nothing else.
     - ASCII only on purpose: Windows PowerShell 5.1 reads BOM-less .ps1 as ANSI,
       so non-ASCII literals would turn into mojibake. Keep this file ASCII.
-    - Config files are overwritten by default; the previous copy stays as <file>.bak.
-      Pass -KeepConfig to skip files that already exist.
     - After installing you MUST fully quit DSH and start it again.
       Plugins are assembled at startup only.
 #>
@@ -29,9 +25,7 @@ param(
     [string]$Profile = 'desktop',
     [string]$DshPath = '',
     [switch]$DryRun,
-    [switch]$SkipInstall,
-    [switch]$SkipConfig,
-    [switch]$KeepConfig
+    [switch]$SkipInstall
 )
 
 $ErrorActionPreference = 'Stop'
@@ -79,35 +73,18 @@ foreach ($prop in ($manifest.dependencies.PSObject.Properties | Sort-Object Name
 }
 if ($packages.Count -eq 0) { Fail "No dependencies listed in plugins.json" }
 
-# ---- 4. config plan --------------------------------------------------------
-$configSpecs = @()
-$cf = $manifest.PSObject.Properties | Where-Object { $_.Name -eq 'configFiles' }
-if ($cf -and $cf.Value) { $configSpecs = @($cf.Value) }
-
 if ($DryRun) {
     Step "Plan for profile '$Profile' (dry run)"
     Write-Host "  DSH home : $dshHome"
     Write-Host "  Profile  : $profileDir"
     Write-Host "  Plugins  : $($packages.Count)"
     foreach ($p in $packages) { Info $p }
-    Write-Host "  Config   : $($configSpecs.Count) file(s)"
-    if ($SkipConfig) {
-        Info "(-SkipConfig given: config files would NOT be touched)"
-    } else {
-        foreach ($spec in $configSpecs) {
-            $t = ([string]$spec.target) -replace '\{profile\}', $Profile
-            $exists = Test-Path -LiteralPath (Join-Path $dshHome $t)
-            $note = if ($exists -and $KeepConfig) { ' (exists, would skip)' }
-                    elseif ($exists) { ' (exists, would overwrite, .bak kept)' }
-                    else { ' (new)' }
-            Info "$t$note"
-        }
-    }
+    Write-Host "  Bundles  : $(@($manifest.bundles).Count) entries"
     Write-Host "`n[DRY RUN] Nothing changed." -ForegroundColor Yellow
     exit 0
 }
 
-# ---- 5. install packages ---------------------------------------------------
+# ---- 4. install packages ---------------------------------------------------
 if (-not $SkipInstall) {
     function Find-Dsh {
         $onPath = Get-Command dsh -ErrorAction SilentlyContinue
@@ -134,7 +111,7 @@ if (-not $SkipInstall) {
     if ($LASTEXITCODE -ne 0) { Fail "pnpm/dsh returned exit code $LASTEXITCODE" }
 }
 
-# ---- 6. restore bundle order ----------------------------------------------
+# ---- 5. restore bundle order ----------------------------------------------
 if (Test-Path -LiteralPath $profilePkg) {
     $pkg = Get-Content $profilePkg -Raw -Encoding UTF8 | ConvertFrom-Json
     $installed = @($pkg.dependencies.PSObject.Properties.Name)
@@ -149,35 +126,7 @@ if (Test-Path -LiteralPath $profilePkg) {
     Write-Host "`n[WARN] profile package.json not found: $profilePkg" -ForegroundColor Yellow
 }
 
-# ---- 7. restore config files ----------------------------------------------
-if ($SkipConfig) {
-    Step "Skipping config files (-SkipConfig): plugins only"
-} elseif ($configSpecs.Count -gt 0) {
-    Step "Restoring $($configSpecs.Count) config file(s)"
-    foreach ($spec in $configSpecs) {
-        $targetRel = ([string]$spec.target) -replace '\{profile\}', $Profile
-        $dest = Join-Path $dshHome $targetRel
-        $src = if ($here) { Join-Path $here ([string]$spec.source) } else { $null }
-
-        if (Test-Path -LiteralPath $dest) {
-            if ($KeepConfig) { Info "skip (exists): $targetRel"; continue }
-            Copy-Item -LiteralPath $dest -Destination ($dest + '.bak') -Force
-            Info "backup: $targetRel.bak"
-        }
-        $destDir = Split-Path -Parent $dest
-        if (-not (Test-Path -LiteralPath $destDir)) { New-Item -ItemType Directory -Path $destDir -Force | Out-Null }
-
-        if ($src -and (Test-Path -LiteralPath $src)) {
-            Copy-Item -LiteralPath $src -Destination $dest -Force
-        } else {
-            $u = "$rawBase/$([string]$spec.source)"
-            Invoke-WebRequest -Uri $u -OutFile $dest -UseBasicParsing
-        }
-        Info "wrote: $targetRel"
-    }
-}
-
-# ---- 8. verify -------------------------------------------------------------
+# ---- 6. verify -------------------------------------------------------------
 $nm = Join-Path $profileDir 'node_modules'
 $missing = @()
 foreach ($prop in $manifest.dependencies.PSObject.Properties) {
@@ -189,7 +138,6 @@ if ($missing.Count -gt 0) {
     Step "All $($manifest.dependencies.PSObject.Properties.Count) packages present in node_modules"
 }
 
-$doneSuffix = if ($SkipConfig) { "Plugins installed." } else { "Plugins and config restored." }
-Write-Host "`n[DONE] $doneSuffix" -ForegroundColor Green
+Write-Host "`n[DONE] Plugins installed (settings untouched)." -ForegroundColor Green
 Write-Host "Next: FULLY QUIT DSH (tray -> Exit) and start it again." -ForegroundColor Green
 Write-Host "Plugins are assembled at startup only; closing the window is not enough." -ForegroundColor DarkGray

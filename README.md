@@ -1,8 +1,10 @@
 # dsh-plugins
 
-这个仓库存的是「我这台机器装了哪些 DSH 插件、什么版本、按什么顺序加载」，外加这些插件的配置文件。换电脑、重装、或 profile 崩了，用它原样装回来。
+这个仓库存的是「我这台机器装了哪些 DSH 插件、什么版本、按什么顺序加载」。换电脑、重装、或 profile 崩了，用它把插件本体装回来。
 
-仓库存两样东西：**插件清单**（装哪些、什么版本、按什么顺序加载）+ **配置快照**（`cordis.patch.yml` 里的模型/UI/权限参数、市场设置）。不存会话、不存凭据。
+**只备份插件，不备份配置。** 插件的设置（模型、UI、权限预设、侧栏、缩放）留在本机 profile 里，不往这个仓库放 —— 旧配置搬到新机器上反而会把新装的 DSH 配坏。装回来之后按自己习惯重新设一遍，比恢复一份过期配置安全。
+
+仓库不存会话、不存凭据。
 
 ---
 
@@ -10,8 +12,8 @@
 
 | 你说什么 | 方向 | 结果 |
 | --- | --- | --- |
-| **装回插件** | 本仓库 → 你这台机器 | 按清单把 11 个插件装回来，并问你配置要不要一起恢复 |
-| **同步插件库** | 你这台机器 → 本仓库 | 把当前装的插件和配置文件写进仓库并推送 |
+| **装回插件** | 本仓库 → 你这台机器 | 按清单把 11 个插件装回来 |
+| **同步插件库** | 你这台机器 → 本仓库 | 把当前装的插件和版本写进清单并推送 |
 
 两个都是**对 DSH 里的 agent 说**，不是我敲命令行。下面分别说明什么时候用哪个。
 
@@ -27,30 +29,14 @@
 装回插件
 ```
 
-agent **会先问你一句「配置文件也一起恢复吗」**，你答完它才动手。之后做完这些事：
+agent 会做完这些事：
 
-1. 读本仓库的 `plugins.json`（包名 + 锁定版本 + 加载顺序 + 配置清单）
+1. 读本仓库的 `plugins.json`（包名 + 锁定版本 + 加载顺序）
 2. 执行 `dsh plugin --profile desktop add`，把 11 个包按锁死的版本装上
 3. 按清单重排 `~/.dsh/profiles/desktop/package.json` 里的 `bundles` 顺序
-4. 你同意的话，把 `configFiles` 列的 3 个配置文件写回去（补丁层参数、pnpm 排除项、市场状态）；不同意就跳过，只装插件
-5. 检查 `node_modules` 里每个包都在，然后提醒你重启
+4. 检查 `node_modules` 里每个包都在，然后提醒你重启
 
-### 配置也一起恢复
-
-第 4 步写回的是这三样：
-
-| 文件 | 里面是什么 |
-| --- | --- |
-| `profiles/desktop/cordis.patch.yml` | 补丁层：默认模型、UI 偏好、`dsh-ops` 策略、`better-sidebar` 的 `agentOpenTools`、`ui-scale` 的 110%、权限预设（`permission`，默认 `danger-full-access`） |
-| `profiles/desktop/pnpm-workspace.yaml` | `minimumReleaseAgeExclude` 那几行，少了它 pnpm 可能拒绝安装「太新」的包 |
-| `profiles/desktop/.dsh-market/state.json` | 市场分区 `china`、分组、禁用列表 |
-
-默认**覆盖**，覆盖前把原文件留成 `<文件名>.bak`。四个开关：
-
-- `-SkipConfig` —— 只要插件，配置一点不动（你说「不用恢复配置」时 agent 会带上这个）
-- `-KeepConfig` —— 已存在的配置文件不覆盖，只补缺失的
-- `-SkipInstall` —— 只恢复配置，不重装插件
-- `-DryRun` —— 只打印计划，什么都不改
+**不会碰你的设置**：`cordis.patch.yml`、市场设置、pnpm 配置都不动。装完 DSH 里的插件开关、权限预设、UI 缩放还是你原来的样子；换机器就是全新默认值，需要什么自己再调。
 
 ### 新电脑：agent 还不知道有这个库
 
@@ -90,9 +76,7 @@ powershell -ExecutionPolicy Bypass -File install.ps1 -DryRun
 同步插件库
 ```
 
-agent 会读 `~/.dsh/profiles/desktop/package.json`，把新的 `dependencies` 和 `bundles` 写进仓库里的 `plugins.json`，**同时**同步 `snapshot/` 下的配置文件原件（`package.json`、`cordis.patch.yml`、`pnpm-workspace.yaml`、市场价格 `state.json`），然后推送。
-
-插件清单和配置文件是一起备份的——只传清单不算数。改了插件设置（比如 UI 缩放、权限预设、侧栏开关）之后也同步一次，下次装回来才是改过的配置。
+agent 会读 `~/.dsh/profiles/desktop/package.json`，把新的 `dependencies` 和 `bundles` 写进仓库里的 `plugins.json`，然后推送。只同步插件清单，配置文件一律不进仓库。
 
 手动改也行：直接编辑 `plugins.json` 里的 `dependencies`（版本）和 `bundles`（顺序），提交推送。
 
@@ -104,14 +88,12 @@ agent 会读 `~/.dsh/profiles/desktop/package.json`，把新的 `dependencies` �
 
 | 文件 | 说明 |
 | --- | --- |
-| `plugins.json` | 机器可读清单：11 个包的锁定版本 + 13 条 `bundles` 加载顺序 + `configFiles` 配置清单 |
-| `install.ps1` | 一键恢复脚本（装插件 + 排加载顺序 + 写回配置；`-SkipConfig` 只装插件，`-SkipInstall` 只恢复配置）。ASCII only，避免 PowerShell 5.1 按 ANSI 读中文乱码 |
+| `plugins.json` | 机器可读清单：11 个包的锁定版本 + 13 条 `bundles` 加载顺序 |
+| `install.ps1` | 一键恢复脚本（装插件 + 排加载顺序；`-SkipInstall` 只排顺序，`-DryRun` 只看计划）。ASCII only，避免 PowerShell 5.1 按 ANSI 读中文乱码 |
 | `install.cmd` | 双击入口，调 `install.ps1` |
 | `AGENTS.md` | 给 agent 的规则片段，可贴进新机器的 `AGENTS.md` |
-| `snapshot/package.json` | profile 的原始配置快照 |
-| `snapshot/cordis.patch.yml` | 补丁层快照：模型、UI、ops、侧栏、缩放、权限预设的参数 |
-| `snapshot/pnpm-workspace.yaml` | pnpm 的 `minimumReleaseAgeExclude` 排除项 |
-| `snapshot/dsh-market-state.json` | 插件市场的分区与分组状态 |
+
+没有 `snapshot/` 了：配置文件不再备份，装回来只拿插件本体。
 
 `plugins.json` 长这样：
 
@@ -119,10 +101,7 @@ agent 会读 `~/.dsh/profiles/desktop/package.json`，把新的 `dependencies` �
 {
   "profile": "desktop",
   "dependencies": { "dsh-my-guardian": "0.4.6", "...": "..." },
-  "bundles": ["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-web-app", "dsh-my-guardian", "..."],
-  "configFiles": [
-    { "source": "snapshot/cordis.patch.yml", "target": "profiles/{profile}/cordis.patch.yml" }
-  ]
+  "bundles": ["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-web-app", "dsh-my-guardian", "..."]
 }
 ```
 
@@ -181,7 +160,8 @@ agent 会读 `~/.dsh/profiles/desktop/package.json`，把新的 `dependencies` �
 
 - **会话记录**（`~/.dsh/sessions`）—— 这个仓库只管插件，不管聊天历史。
 - **凭据 / 登录态**（`~/.dsh/.credentials.yaml`、`.dshw-usage.json` 等）。
-- **插件自己的缓存与日志**（`~/.dsh/storages/session_projcache*`、`.plugin-manager/logs`、`guardian/state.json` 的运行时事件）—— 这些是重装后会自动重建的东西，备份没意义。真正需要复现的设置都在 `cordis.patch.yml` 里。
+- **插件配置**（`profiles/desktop/cordis.patch.yml`、`.dsh-market/state.json`、`pnpm-workspace.yaml`）—— 这是有意不备份的：旧配置搬到新机器上会把新环境配坏（比如把已卸载插件的开关、旧权限预设写回去）。插件装好之后自己调一遍更省事。
+- **插件自己的缓存与日志**（`~/.dsh/storages/session_projcache*`、`.plugin-manager/logs`、`guardian/state.json` 的运行时事件）—— 重装后会自动重建。
 
 ---
 

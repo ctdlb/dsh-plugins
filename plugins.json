@@ -29,19 +29,5 @@
     "dsh-ui-scale": "0.1.5",
     "dsh-whale-widget": "0.4.2",
     "dshmarket": "1.66.45"
-  },
-  "configFiles": [
-    {
-      "source": "snapshot/cordis.patch.yml",
-      "target": "profiles/{profile}/cordis.patch.yml"
-    },
-    {
-      "source": "snapshot/pnpm-workspace.yaml",
-      "target": "profiles/{profile}/pnpm-workspace.yaml"
-    },
-    {
-      "source": "snapshot/dsh-market-state.json",
-      "target": "profiles/{profile}/.dsh-market/state.json"
-    }
-  ]
+  }
 }
