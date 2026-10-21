@@ -1,8 +1,20 @@
 # dsh-plugins
 
-DeepSeek Harness（DSH）desktop profile 的插件备份。换电脑、重装、或 profile 搞坏了，一条命令把插件全装回来。
+DeepSeek Harness（DSH）desktop profile 的插件备份。换电脑、重装、或 profile 搞坏了，一句话把插件全装回来。
 
-## 一键安装
+## 一句话安装
+
+在 DSH 对话框里对 agent 说：
+
+> **装回插件**
+
+就这四个字。agent 会读本仓库的 `plugins.json`，执行 `dsh plugin --profile desktop add`（11 个包，版本按清单锁死），把 `bundles` 顺序写回 profile，校验 `node_modules`，然后提示你重启。全程不用你碰命令行。
+
+反向操作（把当前已装的插件写回本仓库）说：**同步插件库**。
+
+前提：这台机器上 DSH 能正常启动、agent 有 shell。**DSH 崩了打不开、或新电脑还没装 DSH 时**，用下面这一行。
+
+## 命令行安装（没有 agent 时）
 
 在装了 DSH 的机器上打开 PowerShell，粘贴：
 
