@@ -1,0 +1,51 @@
+# Your patch layer for this dsh profile, applied after every bundle layer:
+# a top-level YAML array of loader patch entries (id-targeted config
+# overrides, disables, and insert lists; `!!js` expressions allowed).
+- id: agent-default-model
+  name: "@deepseek-ai/dsh-agent-default-model"
+  config:
+    provider: deepseek-account
+    model: deepseek-flash
+    reasoningEffort: high
+- id: ui-settings-account
+  name: "@deepseek-ai/dsh-client-ui-settings-account"
+  config:
+    version: 1
+    step: done
+    purpose: both
+    process: detailed
+    completion: completed
+    usage: detailed
+    developerTools: true
+- id: ui-chat
+  name: "@deepseek-ai/dsh-client-ui-chat"
+  config:
+    transcriptView: detailed
+    performanceUsage: detailed
+    linkOpening: new-tab
+- id: ui-settings
+  name: "@deepseek-ai/dsh-client-ui-settings"
+  config:
+    enabled: true
+- id: dsh-ops-shell
+  name: dsh-ops/shell
+  config:
+    promptPolicy: true
+    publishBashTool: true
+    shellPolicy: advise
+    allowSystemShellFallback: false
+    configUpdateVersion: 2
+- id: dsh-ops-file
+  name: dsh-ops/file
+  config:
+    promptPolicy: true
+    required: false
+    configUpdateVersion: 2
+- id: better-sidebar
+  name: dsh-better-sidebar
+  config:
+    agentOpenTools: true
+- id: ui-scale
+  name: dsh-ui-scale
+  config:
+    scale: 110
