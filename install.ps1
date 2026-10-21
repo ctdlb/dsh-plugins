@@ -28,7 +28,12 @@ function Step([string]$msg) { Write-Host "`n[*] $msg" -ForegroundColor Cyan }
 # ---- 1. locate manifest ----------------------------------------------------
 $rawBase = 'https://raw.githubusercontent.com/ctdlb/dsh-plugins/main'
 $here = $PSScriptRoot
-if (-not $here) { $here = Split-Path -Parent $MyInvocation.MyCommand.Definition }
+if (-not $here) {
+    try {
+        $p = $MyInvocation.MyCommand.Path
+        if ($p) { $here = Split-Path -Parent $p }
+    } catch { $here = $null }
+}
 $manifestPath = if ($here) { Join-Path $here 'plugins.json' } else { $null }
 
 if ($manifestPath -and (Test-Path $manifestPath)) {
