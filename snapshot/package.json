@@ -1,0 +1,36 @@
+{
+  "name": "dsh-profile-desktop",
+  "private": true,
+  "dsh": {
+    "profile": {
+      "bundles": [
+        "@deepseek-ai/dsh-base",
+        "@deepseek-ai/dsh-web-app",
+        "dsh-my-guardian",
+        "dsh-whale-widget",
+        "@michengai/dsh-archive-manager",
+        "dshmarket",
+        "dsh-ops",
+        "billion-context",
+        "dsh-better-sidebar",
+        "dsh-browser-cdp",
+        "cc-safety-net",
+        "@michengai/dsh-skills-manager",
+        "dsh-ui-scale"
+      ]
+    }
+  },
+  "dependencies": {
+    "@michengai/dsh-archive-manager": "1.1.6",
+    "@michengai/dsh-skills-manager": "1.2.9",
+    "billion-context": "0.1.202",
+    "cc-safety-net": "2.6.16",
+    "dsh-better-sidebar": "0.28.0",
+    "dsh-browser-cdp": "1.3.0",
+    "dsh-my-guardian": "0.4.6",
+    "dsh-ops": "0.4.1",
+    "dsh-ui-scale": "0.1.5",
+    "dsh-whale-widget": "0.4.2",
+    "dshmarket": "1.66.45"
+  }
+}
