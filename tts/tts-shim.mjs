@@ -10,6 +10,26 @@ const KEY = process.env.AZKEY || "";
 const DEFAULT_VOICE = process.env.AZDEFAULTVOICE || "zh-CN-XiaoxiaoNeural";
 const OUTPUT_FORMAT = "riff-24khz-16bit-mono-pcm";
 
+// Spoken-form substitutions, e.g. AM_TTS_SUBS='{"999":"九九九","120":"一二零"}'.
+// Azure reads a bare "999" as 九百九十九; emergency numbers must be read digit by digit.
+const SUBS = (() => {
+  try {
+    const raw = JSON.parse(process.env.AM_TTS_SUBS || "{}");
+    return Object.entries(raw)
+      .map(([k, v]) => [String(k), String(v)])
+      .filter(([k, v]) => k && v)
+      .sort((a, b) => b[0].length - a[0].length);
+  } catch {
+    return [];
+  }
+})();
+
+function applySubs(text) {
+  let out = text;
+  for (const [from, to] of SUBS) out = out.split(from).join(to);
+  return out;
+}
+
 if (!KEY) {
   console.error("AZKEY is empty; start this process with the key in its environment.");
   process.exit(1);
@@ -62,7 +82,7 @@ async function synthesize({ input, voice, speed }) {
   const open = rate(speed);
   const ssml =
     `<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='${lang}'>` +
-    `<voice name='${name}'>${open}${escapeXml(input)}${open ? "</prosody>" : ""}</voice></speak>`;
+    `<voice name='${name}'>${open}${escapeXml(applySubs(input))}${open ? "</prosody>" : ""}</voice></speak>`;
   let jwt = await getToken(false);
   let res = await send(jwt, ssml);
   if (res.status === 401) {
@@ -85,7 +105,7 @@ function send(jwt, ssml) {
 const server = http.createServer((req, res) => {
   if (req.method === "GET" && (req.url === "/health" || req.url === "/")) {
     res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ ok: true, region: REGION, voice: DEFAULT_VOICE }));
+    res.end(JSON.stringify({ ok: true, region: REGION, voice: DEFAULT_VOICE, subs: SUBS.length }));
     return;
   }
   if (req.method !== "POST" || !req.url.startsWith("/v1/audio/speech")) {

@@ -97,6 +97,14 @@ agent 会读 `~/.dsh/profiles/desktop/package.json`，把新的 `dependencies` �
 
 为什么需要这层小服务：`am` 只认 ElevenLabs 或「OpenAI 兼容的本地 TTS 接口」，不认 Azure；`tts-shim.mjs` 就是把后者翻译成 Azure 语音（默认晓晓高清一代）。密钥只在运行时从 Windows 凭据管理器 `TextToTalk_AccessKeys_AzureCognitiveServices` 读，**仓库里、脚本里都不存密钥**。
 
+念数字的问题：Azure 会把 `999` 念成「九百九十九」，急救号码必须一字一顿。起服务时加一条环境变量即可，草稿里写的还是 `999`，字幕不受影响：
+
+```powershell
+$env:AM_TTS_SUBS = '{"999":"九九九","120":"一二零","110":"一一零","119":"一一九"}'
+```
+
+`AM_TTS_SUBS` 是 JSON 的「原文 → 念法」替换表，按 key 长度从长到短替换；`/health` 里的 `subs` 字段能看出生效了几条。
+
 手动起停（一般用不上，agent 会自己做）：
 
 ```powershell
