@@ -16,13 +16,15 @@
     "cc-safety-net",
     "@michengai/dsh-skills-manager",
     "dsh-ui-scale",
-    "dsh-context"
+    "dsh-context",
+    "dsh-answer-me-with-html"
   ],
   "dependencies": {
     "@michengai/dsh-archive-manager": "1.1.6",
     "@michengai/dsh-skills-manager": "1.2.9",
     "billion-context": "0.1.202",
     "cc-safety-net": "2.6.16",
+    "dsh-answer-me-with-html": "0.5.0",
     "dsh-better-sidebar": "0.28.0",
     "dsh-browser-cdp": "1.3.0",
     "dsh-context": "0.74.0",

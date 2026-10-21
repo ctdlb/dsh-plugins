@@ -6,15 +6,20 @@
     powershell -ExecutionPolicy Bypass -File install.ps1
     powershell -ExecutionPolicy Bypass -File install.ps1 -DryRun
     powershell -ExecutionPolicy Bypass -File install.ps1 -SkipInstall   # bundle order only
+    powershell -ExecutionPolicy Bypass -File install.ps1 -SkipTts       # plugins only, no TTS helpers
 
   What it restores:
     1. every dependency pinned in plugins.json
     2. the bundles load order inside the profile package.json
+    3. the optional local TTS helpers (tts-shim.mjs, tts-start.ps1, tts-stop.ps1)
+       into ~/.dsh -- pass -SkipTts to leave them out
 
   Notes:
     - Plugins ONLY. This script never touches cordis.patch.yml or any other
       settings file: a stale config snapshot can break a fresh machine, so the
       repo deliberately stores the plugin list and nothing else.
+    - The TTS helpers carry no secrets. They read the Azure key from Windows
+      Credential Manager at run time, and voice-over stays OFF unless asked for.
     - ASCII only on purpose: Windows PowerShell 5.1 reads BOM-less .ps1 as ANSI,
       so non-ASCII literals would turn into mojibake. Keep this file ASCII.
     - After installing you MUST fully quit DSH and start it again.
@@ -25,7 +30,8 @@ param(
     [string]$Profile = 'desktop',
     [string]$DshPath = '',
     [switch]$DryRun,
-    [switch]$SkipInstall
+    [switch]$SkipInstall,
+    [switch]$SkipTts
 )
 
 $ErrorActionPreference = 'Stop'
@@ -80,6 +86,11 @@ if ($DryRun) {
     Write-Host "  Plugins  : $($packages.Count)"
     foreach ($p in $packages) { Info $p }
     Write-Host "  Bundles  : $(@($manifest.bundles).Count) entries"
+    if ($SkipTts) {
+        Write-Host "  TTS      : skipped (-SkipTts)"
+    } else {
+        Write-Host "  TTS      : tts-shim.mjs + tts-start.ps1 + tts-stop.ps1 -> $dshHome"
+    }
     Write-Host "`n[DRY RUN] Nothing changed." -ForegroundColor Yellow
     exit 0
 }
@@ -126,7 +137,40 @@ if (Test-Path -LiteralPath $profilePkg) {
     Write-Host "`n[WARN] profile package.json not found: $profilePkg" -ForegroundColor Yellow
 }
 
-# ---- 6. verify -------------------------------------------------------------
+# ---- 6. restore optional TTS helpers --------------------------------------
+# tts-shim.mjs is a tiny local bridge: it speaks the OpenAI-compatible
+# /v1/audio/speech API that the answer-me-with-html skill expects, and forwards
+# to Azure Speech with a key read from Windows Credential Manager at run time.
+if ($SkipTts) {
+    Step "Skipping TTS helpers (-SkipTts)"
+} else {
+    $ttsFiles = @('tts-shim.mjs', 'tts-start.ps1', 'tts-stop.ps1')
+    $ttsLocal = if ($here) { Join-Path $here 'tts' } else { $null }
+    $ttsDone = @()
+    foreach ($f in $ttsFiles) {
+        $src = if ($ttsLocal) { Join-Path $ttsLocal $f } else { $null }
+        $dst = Join-Path $dshHome $f
+        if ($src -and (Test-Path -LiteralPath $src)) {
+            Copy-Item -LiteralPath $src -Destination $dst -Force
+            $ttsDone += $f
+        } else {
+            $url = "$rawBase/tts/$f"
+            try {
+                Invoke-WebRequest -Uri $url -UseBasicParsing -OutFile $dst
+                $ttsDone += $f
+            } catch {
+                Write-Host "  [WARN] could not fetch $f : $($_.Exception.Message)" -ForegroundColor Yellow
+            }
+        }
+    }
+    if ($ttsDone.Count -gt 0) {
+        Step "TTS helpers restored to $dshHome ($($ttsDone -join ', '))"
+        Info "Voice-over is optional and OFF by default: render videos with --voice off."
+        Info "To narrate: run tts-start.ps1, render with --voice local, then tts-stop.ps1."
+    }
+}
+
+# ---- 7. verify -------------------------------------------------------------
 $nm = Join-Path $profileDir 'node_modules'
 $missing = @()
 foreach ($prop in $manifest.dependencies.PSObject.Properties) {
@@ -141,3 +185,6 @@ if ($missing.Count -gt 0) {
 Write-Host "`n[DONE] Plugins installed (settings untouched)." -ForegroundColor Green
 Write-Host "Next: FULLY QUIT DSH (tray -> Exit) and start it again." -ForegroundColor Green
 Write-Host "Plugins are assembled at startup only; closing the window is not enough." -ForegroundColor DarkGray
+if (-not $SkipTts) {
+    Write-Host "TTS is ready but idle: it never starts on its own." -ForegroundColor DarkGray
+}

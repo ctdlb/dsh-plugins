@@ -12,7 +12,7 @@
 
 | 你说什么 | 方向 | 结果 |
 | --- | --- | --- |
-| **装回插件** | 本仓库 → 你这台机器 | 按清单把 12 个插件装回来 |
+| **装回插件** | 本仓库 → 你这台机器 | 按清单把 13 个插件装回来，顺带放好配音用的小工具 |
 | **同步插件库** | 你这台机器 → 本仓库 | 把当前装的插件和版本写进清单并推送 |
 
 两个都是**对 DSH 里的 agent 说**，不是我敲命令行。下面分别说明什么时候用哪个。
@@ -32,9 +32,10 @@
 agent 会做完这些事：
 
 1. 读本仓库的 `plugins.json`（包名 + 锁定版本 + 加载顺序）
-2. 执行 `dsh plugin --profile desktop add`，把 12 个包按锁死的版本装上
+2. 执行 `dsh plugin --profile desktop add`，把 13 个包按锁死的版本装上
 3. 按清单重排 `~/.dsh/profiles/desktop/package.json` 里的 `bundles` 顺序
-4. 检查 `node_modules` 里每个包都在，然后提醒你重启
+4. 把配音用的三个小文件放进 `~/.dsh`（详见下面「三、配音」）
+5. 检查 `node_modules` 里每个包都在，然后提醒你重启
 
 **不会碰你的设置**：`cordis.patch.yml`、市场设置、pnpm 配置都不动。装完 DSH 里的插件开关、权限预设、UI 缩放还是你原来的样子；换机器就是全新默认值，需要什么自己再调。
 
@@ -84,13 +85,41 @@ agent 会读 `~/.dsh/profiles/desktop/package.json`，把新的 `dependencies` �
 
 ---
 
+## 三、配音（可选，默认关闭）
+
+`dsh-answer-me-with-html` 默认只出画面 + 字幕，**不配音**，也不会留任何后台进程。
+
+要配音时对 agent 说一句「要配音」，它会：
+
+1. 跑 `~/.dsh/tts-start.ps1` 起本地小服务（`http://127.0.0.1:18321`）
+2. 用它渲染 `--voice local` 的视频
+3. 渲染完（哪怕报错）立刻跑 `~/.dsh/tts-stop.ps1` 关掉
+
+为什么需要这层小服务：`am` 只认 ElevenLabs 或「OpenAI 兼容的本地 TTS 接口」，不认 Azure；`tts-shim.mjs` 就是把后者翻译成 Azure 语音（默认晓晓高清一代）。密钥只在运行时从 Windows 凭据管理器 `TextToTalk_AccessKeys_AzureCognitiveServices` 读，**仓库里、脚本里都不存密钥**。
+
+手动起停（一般用不上，agent 会自己做）：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\.dsh\tts-start.ps1"
+powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\.dsh\tts-stop.ps1"
+```
+
+几个容易踩的点：
+
+- 360 曾把 `tts-start.ps1` 报成「木马病毒」——误报（读凭据 + `Add-Type` 编译 + 隐藏窗口 + 本地监听凑齐了木马特征）。把这两个脚本加进 360 信任区即可，别让它删掉。
+- 换了音色却还是旧声音：`~/.answer-me-with-html/cache/tts` 按文本哈希缓存音频，**换音色前先清空该目录**。
+- `--voice system` 在 Windows 上等于没声音（只有 macOS `say` / Linux `espeak-ng`）。
+
+---
+
 ## 仓库里有什么
 
 | 文件 | 说明 |
 | --- | --- |
-| `plugins.json` | 机器可读清单：12 个包的锁定版本 + 14 条 `bundles` 加载顺序 |
-| `install.ps1` | 一键恢复脚本（装插件 + 排加载顺序；`-SkipInstall` 只排顺序，`-DryRun` 只看计划）。ASCII only，避免 PowerShell 5.1 按 ANSI 读中文乱码 |
+| `plugins.json` | 机器可读清单：13 个包的锁定版本 + 15 条 `bundles` 加载顺序 |
+| `install.ps1` | 一键恢复脚本（装插件 + 排加载顺序 + 放好配音小工具；`-SkipInstall` 只排顺序，`-SkipTts` 不装配音工具，`-DryRun` 只看计划）。ASCII only，避免 PowerShell 5.1 按 ANSI 读中文乱码 |
 | `install.cmd` | 双击入口，调 `install.ps1` |
+| `tts/` | 可选的配音工具：`tts-shim.mjs`（Azure 转换层）、`tts-start.ps1`、`tts-stop.ps1`。`install.ps1` 会把它们复制到 `~/.dsh` |
 | `AGENTS.md` | 给 agent 的规则片段，可贴进新机器的 `AGENTS.md` |
 
 没有 `snapshot/` 了：配置文件不再备份，装回来只拿插件本体。
@@ -107,7 +136,7 @@ agent 会读 `~/.dsh/profiles/desktop/package.json`，把新的 `dependencies` �
 
 ---
 
-## 当前清单（12 个插件）
+## 当前清单（13 个插件）
 
 | 包 | 版本 | 作用 |
 | --- | --- | --- |
@@ -123,14 +152,15 @@ agent 会读 `~/.dsh/profiles/desktop/package.json`，把新的 `dependencies` �
 | `cc-safety-net` | 2.6.16 | 命令执行前拦截破坏性操作 |
 | `@michengai/dsh-skills-manager` | 1.2.9 | 技能管理面板 |
 | `dsh-ui-scale` | 0.1.5 | 界面全局缩放 |
+| `dsh-answer-me-with-html` | 0.5.0 | 把回答做成可视化 HTML 页/动画（技能包，附 `am` 命令） |
 
 版本锁定在这份清单里。要升级：改这里的版本号，或升级完对 agent 说「同步插件库」。
 
 ---
 
-## 加载顺序（14 条，不是 12 条）
+## 加载顺序（15 条，不是 13 条）
 
-`bundles` 数组顺序 = 插件装配顺序，跟字母序无关。前面两条是宿主自带的基础层，所以 14 条里只有 12 条来自上面那张表：
+`bundles` 数组顺序 = 插件装配顺序，跟字母序无关。前面两条是宿主自带的基础层，所以 15 条里只有 13 条来自上面那张表：
 
 ```
 1  @deepseek-ai/dsh-base        ← 宿主基础层，提供 webServer / settings / loader
@@ -147,6 +177,7 @@ agent 会读 `~/.dsh/profiles/desktop/package.json`，把新的 `dependencies` �
 12 @michengai/dsh-skills-manager
 13 dsh-ui-scale
 14 dsh-context
+15 dsh-answer-me-with-html
 ```
 
 两条硬规则：
@@ -162,6 +193,7 @@ agent 会读 `~/.dsh/profiles/desktop/package.json`，把新的 `dependencies` �
 
 - **会话记录**（`~/.dsh/sessions`）—— 这个仓库只管插件，不管聊天历史。
 - **凭据 / 登录态**（`~/.dsh/.credentials.yaml`、`.dshw-usage.json` 等）。
+- **Azure 语音密钥** —— 它只存在 Windows 凭据管理器（`TextToTalk_AccessKeys_AzureCognitiveServices`），`tts/` 里的脚本是运行时去读，仓库和脚本本身都不含密钥。
 - **插件配置**（`profiles/desktop/cordis.patch.yml`、`.dsh-market/state.json`、`pnpm-workspace.yaml`）—— 这是有意不备份的：旧配置搬到新机器上会把新环境配坏（比如把已卸载插件的开关、旧权限预设写回去）。插件装好之后自己调一遍更省事。
 - **插件自己的缓存与日志**（`~/.dsh/storages/session_projcache*`、`.plugin-manager/logs`、`guardian/state.json` 的运行时事件）—— 重装后会自动重建。
 
