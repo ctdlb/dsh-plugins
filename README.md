@@ -27,12 +27,12 @@
 装回插件
 ```
 
-agent 会自己做完这些事：
+agent **会先问你一句「配置文件也一起恢复吗」**，你答完它才动手。之后做完这些事：
 
 1. 读本仓库的 `plugins.json`（包名 + 锁定版本 + 加载顺序 + 配置清单）
 2. 执行 `dsh plugin --profile desktop add`，把 11 个包按锁死的版本装上
 3. 按清单重排 `~/.dsh/profiles/desktop/package.json` 里的 `bundles` 顺序
-4. 把 `configFiles` 列的 3 个配置文件写回去（补丁层参数、pnpm 排除项、市场状态）
+4. 你同意的话，把 `configFiles` 列的 3 个配置文件写回去（补丁层参数、pnpm 排除项、市场状态）；不同意就跳过，只装插件
 5. 检查 `node_modules` 里每个包都在，然后提醒你重启
 
 ### 配置也一起恢复
@@ -41,13 +41,14 @@ agent 会自己做完这些事：
 
 | 文件 | 里面是什么 |
 | --- | --- |
-| `profiles/desktop/cordis.patch.yml` | 补丁层：默认模型、UI 偏好、`dsh-ops` 策略、`better-sidebar` 的 `agentOpenTools`、`ui-scale` 的 110% |
-| `profiles/desktop/pnpm-workspace.yaml` | `minimumReleaseAgeExclude` 那 4 行，少了它 pnpm 可能拒绝安装「太新」的包 |
+| `profiles/desktop/cordis.patch.yml` | 补丁层：默认模型、UI 偏好、`dsh-ops` 策略、`better-sidebar` 的 `agentOpenTools`、`ui-scale` 的 110%、权限预设（`permission`，默认 `danger-full-access`） |
+| `profiles/desktop/pnpm-workspace.yaml` | `minimumReleaseAgeExclude` 那几行，少了它 pnpm 可能拒绝安装「太新」的包 |
 | `profiles/desktop/.dsh-market/state.json` | 市场分区 `china`、分组、禁用列表 |
 
-默认**覆盖**，覆盖前把原文件留成 `<文件名>.bak`。三个开关：
+默认**覆盖**，覆盖前把原文件留成 `<文件名>.bak`。四个开关：
 
-- `-KeepConfig` —— 已存在的文件不覆盖，只补缺失的
+- `-SkipConfig` —— 只要插件，配置一点不动（你说「不用恢复配置」时 agent 会带上这个）
+- `-KeepConfig` —— 已存在的配置文件不覆盖，只补缺失的
 - `-SkipInstall` —— 只恢复配置，不重装插件
 - `-DryRun` —— 只打印计划，什么都不改
 
@@ -89,7 +90,9 @@ powershell -ExecutionPolicy Bypass -File install.ps1 -DryRun
 同步插件库
 ```
 
-agent 会读 `~/.dsh/profiles/desktop/package.json`，把新的 `dependencies` 和 `bundles` 写进仓库里的 `plugins.json`，同步 `snapshot/` 下的三个原件（`package.json`、`cordis.patch.yml`、`pnpm-workspace.yaml`，外加市场 `state.json`），然后推送。改了插件设置（比如 UI 缩放、侧栏开关）之后也同步一次，下次装回来才是改过的配置。
+agent 会读 `~/.dsh/profiles/desktop/package.json`，把新的 `dependencies` 和 `bundles` 写进仓库里的 `plugins.json`，**同时**同步 `snapshot/` 下的配置文件原件（`package.json`、`cordis.patch.yml`、`pnpm-workspace.yaml`、市场价格 `state.json`），然后推送。
+
+插件清单和配置文件是一起备份的——只传清单不算数。改了插件设置（比如 UI 缩放、权限预设、侧栏开关）之后也同步一次，下次装回来才是改过的配置。
 
 手动改也行：直接编辑 `plugins.json` 里的 `dependencies`（版本）和 `bundles`（顺序），提交推送。
 

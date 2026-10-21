@@ -6,6 +6,7 @@
 
 用户说「**装回插件**」时：
 
+0. **先问一句「配置文件（插件参数、权限预设等）也一起恢复吗」**，等答复再动手；不想恢复就加 `-SkipConfig`，只装插件
 1. 读本仓库 `plugins.json`（`https://raw.githubusercontent.com/ctdlb/dsh-plugins/main/plugins.json`）
 2. 执行 `dsh plugin --profile desktop add <每个 包@版本>`；找不到 `dsh` 就用 `install.ps1`（它会自己找 CLI）
 3. 把 `bundles` 顺序写回 `~/.dsh/profiles/desktop/package.json`（`dsh-my-guardian` 排在插件第一位，前面只留 `@deepseek-ai/dsh-base`、`@deepseek-ai/dsh-web-app` 两个宿主层）
@@ -21,6 +22,8 @@
 2. 重写本仓库 `plugins.json`（`dependencies` 全量 + `bundles` 原顺序）和 `snapshot/package.json`
 3. 同步配置原件：`snapshot/cordis.patch.yml`、`snapshot/pnpm-workspace.yaml`、`snapshot/dsh-market-state.json`（源：`profiles/desktop/cordis.patch.yml`、`pnpm-workspace.yaml`、`.dsh-market/state.json`）
 4. 通过 `api.github.com` 的 Contents API 推送（需要 GitHub 令牌；不要写进任何文件）
+
+**上传插件必须同时上传配置文件**，只传清单不算数。改了插件设置（UI 缩放、权限预设、侧栏开关等）之后也要同步一次。
 
 ## 要贴进 AGENTS.md 的片段
 

@@ -6,6 +6,7 @@
     powershell -ExecutionPolicy Bypass -File install.ps1
     powershell -ExecutionPolicy Bypass -File install.ps1 -DryRun
     powershell -ExecutionPolicy Bypass -File install.ps1 -SkipInstall   # config only
+    powershell -ExecutionPolicy Bypass -File install.ps1 -SkipConfig    # plugins only
     powershell -ExecutionPolicy Bypass -File install.ps1 -KeepConfig    # leave existing config alone
 
   What it restores:
@@ -13,6 +14,7 @@
     2. the bundles load order inside the profile package.json
     3. every file listed in plugins.json.configFiles
        (patch layer = model/UI/plugin settings, market state, pnpm workspace exclusions)
+       -> pass -SkipConfig only when the user said NOT to restore the config
 
   Notes:
     - ASCII only on purpose: Windows PowerShell 5.1 reads BOM-less .ps1 as ANSI,
@@ -28,6 +30,7 @@ param(
     [string]$DshPath = '',
     [switch]$DryRun,
     [switch]$SkipInstall,
+    [switch]$SkipConfig,
     [switch]$KeepConfig
 )
 
@@ -88,13 +91,17 @@ if ($DryRun) {
     Write-Host "  Plugins  : $($packages.Count)"
     foreach ($p in $packages) { Info $p }
     Write-Host "  Config   : $($configSpecs.Count) file(s)"
-    foreach ($spec in $configSpecs) {
-        $t = ([string]$spec.target) -replace '\{profile\}', $Profile
-        $exists = Test-Path -LiteralPath (Join-Path $dshHome $t)
-        $note = if ($exists -and $KeepConfig) { ' (exists, would skip)' }
-                elseif ($exists) { ' (exists, would overwrite, .bak kept)' }
-                else { ' (new)' }
-        Info "$t$note"
+    if ($SkipConfig) {
+        Info "(-SkipConfig given: config files would NOT be touched)"
+    } else {
+        foreach ($spec in $configSpecs) {
+            $t = ([string]$spec.target) -replace '\{profile\}', $Profile
+            $exists = Test-Path -LiteralPath (Join-Path $dshHome $t)
+            $note = if ($exists -and $KeepConfig) { ' (exists, would skip)' }
+                    elseif ($exists) { ' (exists, would overwrite, .bak kept)' }
+                    else { ' (new)' }
+            Info "$t$note"
+        }
     }
     Write-Host "`n[DRY RUN] Nothing changed." -ForegroundColor Yellow
     exit 0
@@ -143,7 +150,9 @@ if (Test-Path -LiteralPath $profilePkg) {
 }
 
 # ---- 7. restore config files ----------------------------------------------
-if ($configSpecs.Count -gt 0) {
+if ($SkipConfig) {
+    Step "Skipping config files (-SkipConfig): plugins only"
+} elseif ($configSpecs.Count -gt 0) {
     Step "Restoring $($configSpecs.Count) config file(s)"
     foreach ($spec in $configSpecs) {
         $targetRel = ([string]$spec.target) -replace '\{profile\}', $Profile
@@ -180,6 +189,7 @@ if ($missing.Count -gt 0) {
     Step "All $($manifest.dependencies.PSObject.Properties.Count) packages present in node_modules"
 }
 
-Write-Host "`n[DONE] Plugins and config restored." -ForegroundColor Green
+$doneSuffix = if ($SkipConfig) { "Plugins installed." } else { "Plugins and config restored." }
+Write-Host "`n[DONE] $doneSuffix" -ForegroundColor Green
 Write-Host "Next: FULLY QUIT DSH (tray -> Exit) and start it again." -ForegroundColor Green
 Write-Host "Plugins are assembled at startup only; closing the window is not enough." -ForegroundColor DarkGray
