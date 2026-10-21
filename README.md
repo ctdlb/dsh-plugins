@@ -12,7 +12,7 @@
 
 | 你说什么 | 方向 | 结果 |
 | --- | --- | --- |
-| **装回插件** | 本仓库 → 你这台机器 | 按清单把 11 个插件装回来 |
+| **装回插件** | 本仓库 → 你这台机器 | 按清单把 12 个插件装回来 |
 | **同步插件库** | 你这台机器 → 本仓库 | 把当前装的插件和版本写进清单并推送 |
 
 两个都是**对 DSH 里的 agent 说**，不是我敲命令行。下面分别说明什么时候用哪个。
@@ -32,7 +32,7 @@
 agent 会做完这些事：
 
 1. 读本仓库的 `plugins.json`（包名 + 锁定版本 + 加载顺序）
-2. 执行 `dsh plugin --profile desktop add`，把 11 个包按锁死的版本装上
+2. 执行 `dsh plugin --profile desktop add`，把 12 个包按锁死的版本装上
 3. 按清单重排 `~/.dsh/profiles/desktop/package.json` 里的 `bundles` 顺序
 4. 检查 `node_modules` 里每个包都在，然后提醒你重启
 
@@ -88,7 +88,7 @@ agent 会读 `~/.dsh/profiles/desktop/package.json`，把新的 `dependencies` �
 
 | 文件 | 说明 |
 | --- | --- |
-| `plugins.json` | 机器可读清单：11 个包的锁定版本 + 13 条 `bundles` 加载顺序 |
+| `plugins.json` | 机器可读清单：12 个包的锁定版本 + 14 条 `bundles` 加载顺序 |
 | `install.ps1` | 一键恢复脚本（装插件 + 排加载顺序；`-SkipInstall` 只排顺序，`-DryRun` 只看计划）。ASCII only，避免 PowerShell 5.1 按 ANSI 读中文乱码 |
 | `install.cmd` | 双击入口，调 `install.ps1` |
 | `AGENTS.md` | 给 agent 的规则片段，可贴进新机器的 `AGENTS.md` |
@@ -107,7 +107,7 @@ agent 会读 `~/.dsh/profiles/desktop/package.json`，把新的 `dependencies` �
 
 ---
 
-## 当前清单（11 个插件）
+## 当前清单（12 个插件）
 
 | 包 | 版本 | 作用 |
 | --- | --- | --- |
@@ -119,6 +119,7 @@ agent 会读 `~/.dsh/profiles/desktop/package.json`，把新的 `dependencies` �
 | `billion-context` | 0.1.202 | 上下文压缩，接管 `compaction-basic` |
 | `dsh-better-sidebar` | 0.28.0 | 侧边栏 |
 | `dsh-browser-cdp` | 1.3.0 | CDP 浏览器 + 侧栏实时观察窗 |
+| `dsh-context` | 0.74.0 | 上下文看板：组成/趋势/费用/文件活动，右栏面板 + `/context` 命令 |
 | `cc-safety-net` | 2.6.16 | 命令执行前拦截破坏性操作 |
 | `@michengai/dsh-skills-manager` | 1.2.9 | 技能管理面板 |
 | `dsh-ui-scale` | 0.1.5 | 界面全局缩放 |
@@ -127,9 +128,9 @@ agent 会读 `~/.dsh/profiles/desktop/package.json`，把新的 `dependencies` �
 
 ---
 
-## 加载顺序（13 条，不是 11 条）
+## 加载顺序（14 条，不是 12 条）
 
-`bundles` 数组顺序 = 插件装配顺序，跟字母序无关。前面两条是宿主自带的基础层，所以 13 条里只有 11 条来自上面那张表：
+`bundles` 数组顺序 = 插件装配顺序，跟字母序无关。前面两条是宿主自带的基础层，所以 14 条里只有 12 条来自上面那张表：
 
 ```
 1  @deepseek-ai/dsh-base        ← 宿主基础层，提供 webServer / settings / loader
@@ -145,6 +146,7 @@ agent 会读 `~/.dsh/profiles/desktop/package.json`，把新的 `dependencies` �
 11 cc-safety-net
 12 @michengai/dsh-skills-manager
 13 dsh-ui-scale
+14 dsh-context
 ```
 
 两条硬规则：

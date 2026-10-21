@@ -15,7 +15,8 @@
     "dsh-browser-cdp",
     "cc-safety-net",
     "@michengai/dsh-skills-manager",
-    "dsh-ui-scale"
+    "dsh-ui-scale",
+    "dsh-context"
   ],
   "dependencies": {
     "@michengai/dsh-archive-manager": "1.1.6",
@@ -24,6 +25,7 @@
     "cc-safety-net": "2.6.16",
     "dsh-better-sidebar": "0.28.0",
     "dsh-browser-cdp": "1.3.0",
+    "dsh-context": "0.74.0",
     "dsh-my-guardian": "0.4.6",
     "dsh-ops": "0.4.1",
     "dsh-ui-scale": "0.1.5",
