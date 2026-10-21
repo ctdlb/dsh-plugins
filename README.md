@@ -1,8 +1,8 @@
 # dsh-plugins
 
-这个仓库存的是「我这台机器装了哪些 DSH 插件、什么版本、按什么顺序加载」。换电脑、重装、或 profile 崩了，用它原样装回来。
+这个仓库存的是「我这台机器装了哪些 DSH 插件、什么版本、按什么顺序加载」，外加这些插件的配置文件。换电脑、重装、或 profile 崩了，用它原样装回来。
 
-仓库存两样东西：**插件清单**（装哪些、什么版本、按什么顺序加载）+ **配置快照**（补丁层的参数、市场设置）。不存会话、不存凭据。
+仓库存两样东西：**插件清单**（装哪些、什么版本、按什么顺序加载）+ **配置快照**（`cordis.patch.yml` 里的模型/UI/权限参数、市场设置）。不存会话、不存凭据。
 
 ---
 
@@ -10,8 +10,8 @@
 
 | 你说什么 | 方向 | 结果 |
 | --- | --- | --- |
-| **装回插件** | 本仓库 → 你这台机器 | 按清单把 11 个插件装回来 |
-| **同步插件库** | 你这台机器 → 本仓库 | 把当前装的插件写进清单并推送 |
+| **装回插件** | 本仓库 → 你这台机器 | 按清单把 11 个插件装回来，并问你配置要不要一起恢复 |
+| **同步插件库** | 你这台机器 → 本仓库 | 把当前装的插件和配置文件写进仓库并推送 |
 
 两个都是**对 DSH 里的 agent 说**，不是我敲命令行。下面分别说明什么时候用哪个。
 
@@ -105,11 +105,11 @@ agent 会读 `~/.dsh/profiles/desktop/package.json`，把新的 `dependencies` �
 | 文件 | 说明 |
 | --- | --- |
 | `plugins.json` | 机器可读清单：11 个包的锁定版本 + 13 条 `bundles` 加载顺序 + `configFiles` 配置清单 |
-| `install.ps1` | 一键恢复脚本（装插件 + 排加载顺序 + 写回配置）。ASCII only，避免 PowerShell 5.1 按 ANSI 读中文乱码 |
+| `install.ps1` | 一键恢复脚本（装插件 + 排加载顺序 + 写回配置；`-SkipConfig` 只装插件，`-SkipInstall` 只恢复配置）。ASCII only，避免 PowerShell 5.1 按 ANSI 读中文乱码 |
 | `install.cmd` | 双击入口，调 `install.ps1` |
 | `AGENTS.md` | 给 agent 的规则片段，可贴进新机器的 `AGENTS.md` |
 | `snapshot/package.json` | profile 的原始配置快照 |
-| `snapshot/cordis.patch.yml` | 补丁层快照：模型、UI、ops、侧栏、缩放的参数 |
+| `snapshot/cordis.patch.yml` | 补丁层快照：模型、UI、ops、侧栏、缩放、权限预设的参数 |
 | `snapshot/pnpm-workspace.yaml` | pnpm 的 `minimumReleaseAgeExclude` 排除项 |
 | `snapshot/dsh-market-state.json` | 插件市场的分区与分组状态 |
 
