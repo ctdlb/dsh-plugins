@@ -153,7 +153,7 @@ powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\.dsh\tts-stop.ps1"
 | `@michengai/dsh-archive-manager` | 1.1.6 | 会话归档 |
 | `dshmarket` | 1.66.45 | 插件市场 |
 | `dsh-ops` | 0.4.1 | 工具层省 token：bash 替代 PowerShell、动态工具加载、结构化工具 |
-| `billion-context` | 0.1.202 | 上下文压缩，接管 `compaction-basic` |
+| `billion-context` | 0.1.204 | 上下文压缩，接管 `compaction-basic` |
 | `dsh-better-sidebar` | 0.28.0 | 侧边栏 |
 | `dsh-browser-cdp` | 1.3.0 | CDP 浏览器 + 侧栏实时观察窗 |
 | `dsh-context` | 0.74.0 | 上下文看板：组成/趋势/费用/文件活动，右栏面板 + `/context` 命令 |
