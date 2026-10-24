@@ -1,8 +1,4 @@
-# DSH 用户级规则（备份副本）
-
-> 这是 `%USERPROFILE%\.dsh\AGENTS.md` 的备份，放在本仓库根目录；换机时照原样复制回 `%USERPROFILE%\.dsh\AGENTS.md` 即可。
-> 生效的那份永远是 `%USERPROFILE%\.dsh\AGENTS.md`；改规则时先改那份，再把同一内容覆盖到本文件并推送。
-> 本仓库本身怎么用（装回插件 / 同步插件库 / 配音工具 / `install.ps1`）见 `README.md`。
+# DSH 用户级规则
 
 本文件是 `$DSH_HOME/AGENTS.md`（本机为 `%USERPROFILE%\.dsh\AGENTS.md`），对所有工作区、所有会话生效。工作区自己的 `AGENTS.md` 优先级更高，冲突时以工作区那份和用户当前指令为准。
 

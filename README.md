@@ -47,7 +47,7 @@ agent 会做完这些事：
 装回插件 https://github.com/ctdlb/dsh-plugins
 ```
 
-装完之后，把本仓库的 [AGENTS.md](AGENTS.md) 复制到新机器的 `%USERPROFILE%\.dsh\AGENTS.md`（它是用户级规则的备份，删掉开头三行说明即可；也可以直接让 agent 去复制）。之后这台机器也能只靠「装回插件」四个字。
+装完之后，把本仓库的 [AGENTS.md](AGENTS.md) 复制到新机器的 `%USERPROFILE%\.dsh\AGENTS.md`（也可以直接让 agent 去复制）。**这份文件与生效那份逐字一致**，原样复制即可，不用改任何一行；判断两边是否同步，比 SHA256 就行。之后这台机器也能只靠「装回插件」四个字。
 
 ### DSH 打不开：没有 agent 可用
 
@@ -128,7 +128,7 @@ powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\.dsh\tts-stop.ps1"
 | `install.ps1` | 一键恢复脚本（装插件 + 排加载顺序 + 放好配音小工具；`-SkipInstall` 只排顺序，`-SkipTts` 不装配音工具，`-DryRun` 只看计划）。ASCII only，避免 PowerShell 5.1 按 ANSI 读中文乱码 |
 | `install.cmd` | 双击入口，调 `install.ps1` |
 | `tts/` | 可选的配音工具：`tts-shim.mjs`（Azure 转换层）、`tts-start.ps1`、`tts-stop.ps1`。`install.ps1` 会把它们复制到 `~/.dsh` |
-| `AGENTS.md` | 用户级规则（`%USERPROFILE%\.dsh\AGENTS.md`）的备份副本，换机时复制回去即可 |
+| `AGENTS.md` | 用户级规则（`%USERPROFILE%\.dsh\AGENTS.md`）的备份副本，与生效那份逐字一致，换机时原样复制回去即可 |
 
 没有 `snapshot/` 了：配置文件不再备份，装回来只拿插件本体。
 
