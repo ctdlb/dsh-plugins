@@ -5,7 +5,24 @@ $ErrorActionPreference = "Stop"
 
 $Port = 18321
 $Shim = Join-Path $PSScriptRoot "tts-shim.mjs"
-$Exe = "D:\Program Files\DeepSeek Harness\DeepSeek Harness.exe"
+# Locate the DSH executable: DSH_EXE first, then the usual install locations.
+# Nothing here assumes a user name or a drive letter.
+$ExeCandidates = @()
+if ($env:DSH_EXE) { $ExeCandidates += $env:DSH_EXE }
+foreach ($root in @($env:ProgramFiles, ${env:ProgramFiles(x86)})) {
+  if ($root) { $ExeCandidates += (Join-Path $root "DeepSeek Harness\DeepSeek Harness.exe") }
+}
+if ($env:LOCALAPPDATA) {
+  $ExeCandidates += (Join-Path $env:LOCALAPPDATA "Programs\DeepSeek Harness\DeepSeek Harness.exe")
+}
+$ExeCandidates += "D:\Program Files\DeepSeek Harness\DeepSeek Harness.exe"
+$Exe = $null
+foreach ($c in $ExeCandidates) {
+  if ($c -and (Test-Path -LiteralPath $c)) { $Exe = $c; break }
+}
+if (-not $Exe) {
+  throw "DeepSeek Harness.exe not found. Set DSH_EXE to its full path, then run this script again."
+}
 $Target = "TextToTalk_AccessKeys_AzureCognitiveServices"
 $DefaultVoice = "zh-CN-Xiaoxiao:DragonHDFlashLatestNeural"
 
@@ -56,7 +73,7 @@ $env:AZDEFAULTVOICE = $DefaultVoice
 $env:ELECTRON_RUN_AS_NODE = "1"
 $log = Join-Path $env:TEMP "tts-shim.log"
 $err = Join-Path $env:TEMP "tts-shim.err.log"
-$proc = Start-Process -FilePath $Exe -ArgumentList $Shim -WindowStyle Hidden -PassThru -RedirectStandardOutput $log -RedirectStandardError $err
+$proc = Start-Process -FilePath $Exe -ArgumentList ('"' + $Shim + '"') -WindowStyle Hidden -PassThru -RedirectStandardOutput $log -RedirectStandardError $err
 
 $ok = $false
 for ($i = 0; $i -lt 20; $i++) {
