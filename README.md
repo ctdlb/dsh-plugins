@@ -47,7 +47,7 @@ agent 会做完这些事：
 装回插件 https://github.com/ctdlb/dsh-plugins
 ```
 
-装完之后，把 [AGENTS.md](AGENTS.md) 里那段贴进新机器的 `AGENTS.md`（也可以直接让 agent 追加）。之后这台机器也能只靠「装回插件」四个字。
+装完之后，把本仓库的 [AGENTS.md](AGENTS.md) 复制到新机器的 `%USERPROFILE%\.dsh\AGENTS.md`（它是用户级规则的备份，删掉开头三行说明即可；也可以直接让 agent 去复制）。之后这台机器也能只靠「装回插件」四个字。
 
 ### DSH 打不开：没有 agent 可用
 
@@ -128,7 +128,7 @@ powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\.dsh\tts-stop.ps1"
 | `install.ps1` | 一键恢复脚本（装插件 + 排加载顺序 + 放好配音小工具；`-SkipInstall` 只排顺序，`-SkipTts` 不装配音工具，`-DryRun` 只看计划）。ASCII only，避免 PowerShell 5.1 按 ANSI 读中文乱码 |
 | `install.cmd` | 双击入口，调 `install.ps1` |
 | `tts/` | 可选的配音工具：`tts-shim.mjs`（Azure 转换层）、`tts-start.ps1`、`tts-stop.ps1`。`install.ps1` 会把它们复制到 `~/.dsh` |
-| `AGENTS.md` | 给 agent 的规则片段，可贴进新机器的 `AGENTS.md` |
+| `AGENTS.md` | 用户级规则（`%USERPROFILE%\.dsh\AGENTS.md`）的备份副本，换机时复制回去即可 |
 
 没有 `snapshot/` 了：配置文件不再备份，装回来只拿插件本体。
 
@@ -209,4 +209,4 @@ powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\.dsh\tts-stop.ps1"
 
 ## 出处
 
-本机工作区是 `E:\DeepSeek Harness`，`desktop` profile 在 `C:\Users\ctdlb\.dsh\profiles\desktop`。别处用同一套 DSH 目录结构（`~/.dsh/...`），脚本按运行时实际路径计算，不写死盘符。
+本机工作区是 `E:\DeepSeek Harness`，`desktop` profile 在 `%USERPROFILE%\.dsh\profiles\desktop`（用户名随机器变，别写死 `C:\Users\<名字>`）。别处用同一套 DSH 目录结构（`~/.dsh/...`），脚本按运行时实际路径计算，不写死盘符。
