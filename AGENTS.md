@@ -24,11 +24,12 @@
 - 要配音时按需起停，**渲染完立刻关掉**，不常驻（用户介意常驻进程与外挂误判）。**起停由 agent 自己做，用户不操作任何文件**——用户只说「要配音」，agent 负责 `start → 渲染 → stop` 全流程；即使渲染报错，收尾那一步也必须执行，不能留下监听进程。
 - **首选脚本**（`%USERPROFILE%\.dsh\tts-start.ps1` / `tts-stop.ps1`，已加入 360 信任区；2026-10-21 360 曾把 `tts-start.ps1` 报成「恶意行为监控 / 木马病毒」——误报，原因是「P/Invoke 读凭据 + `Add-Type` 编译 + 隐藏窗口 + 本地监听」凑齐了窃密木马的行为特征）：
   1. `powershell -ExecutionPolicy Bypass -File "%USERPROFILE%\.dsh\tts-start.ps1"` —— 读凭据管理器 `TextToTalk_AccessKeys_AzureCognitiveServices`，起 `tts-shim.mjs` 于 `http://127.0.0.1:18321`（默认音色 `zh-CN-Xiaoxiao:DragonHDFlashLatestNeural`），自带健康检查；
-  2. 渲染：设 `AM_TTS_URL=http://127.0.0.1:18321`、`AM_TTS_MODEL=azure`、`AM_TTS_VOICE=<音色 ID>`，用 `Start-Process -Wait` 跑 `am.mjs video --voice local --no-open <draft>`（直接 `&` 调用会立刻返回、拿不到输出）；
+  2. 渲染：设 `AM_TTS_URL=http://127.0.0.1:18321`、`AM_TTS_MODEL=azure`、`AM_TTS_VOICE=<音色 ID>`，用 `Start-Process -Wait` 跑 `am.mjs video --voice local --no-open <草稿>`；`am` 不在 PATH，脚本固定在 `<profile>\node_modules\dsh-answer-me-with-html\skills\answer-me-with-html\scripts\am.mjs`（本机 `<profile>` = `%USERPROFILE%\.dsh\profiles\desktop`），要用 DSH 自带的 Electron 运行时当 node 跑：设 `ELECTRON_RUN_AS_NODE=1` 后执行 DSH 主程序（`DeepSeek Harness.exe`，路径以本机安装位置为准）并传该脚本；`Start-Process` 里脚本路径和草稿路径**都不能带空格**（会被拆开，报 `Cannot read the draft: ENOENT ... 'E:\DeepSeek'`），草稿放 `%USERPROFILE%\.dsh\draft-*.md`；
   3. 收尾：`powershell -ExecutionPolicy Bypass -File "%USERPROFILE%\.dsh\tts-stop.ps1"`，再确认 18321 端口已释放。
 - **回退方案**（脚本再次被杀、或在新机器上）：同一段 pwsh 里 P/Invoke `CredRead` 读凭据 → 设 `AZKEY`/`AZREGION`/`AZDEFAULTVOICE` → `Start-Process` 起 `tts-shim.mjs`（须在已设 `ELECTRON_RUN_AS_NODE=1` 的进程里启动）→ 渲完后按 `Get-NetTCPConnection -LocalPort 18321` 取 pid 再 `Stop-Process -Force`。
 - `am` 只认 ElevenLabs 或「本地 OpenAI 兼容 TTS」，不认 Azure；`tts-shim.mjs` 就是这层转换（对外 `POST /v1/audio/speech`，返回 24 kHz 单声道 PCM WAV）。`--voice system` 只在 macOS/Linux 有实现，Windows 上等于没有声音。
 - 同一段文字按文本哈希命中 `%USERPROFILE%\.answer-me-with-html\cache\tts` 里的旧音频，**换音色或改念法前必须清空该目录**，否则听到的还是旧音频。
 - **号码要一字一顿**：Azure 会把 `999` 念成「九百九十九」、`120` 念成「一百二十」。起服务前设 `AM_TTS_SUBS`（JSON，「原文 → 念法」），例如 `$env:AM_TTS_SUBS='{"999":"九九九","120":"一二零","110":"一一零","119":"一一九"}'`；草稿里照常写阿拉伯数字，字幕不受影响。`tts-start.ps1` 会把这个变量传给 shim，`/health` 的 `subs` 字段显示生效条数。
+- **新机器要用配音，先补凭据**：密钥不在仓库里。打开「控制面板 → 凭据管理器 → Windows 凭据 → 添加普通凭据」，目标名填 `TextToTalk_AccessKeys_AzureCognitiveServices`、用户名填区域（本机用 `eastasia`）、密码填 32 位十六进制的 Azure 语音订阅密钥；`tts-start.ps1` 就是按这个目标名去读的。
 - 密钥只在进程环境变量（`AZKEY`/`AZREGION`）里，任何脚本与文档都不得写入密钥本身。
 - 音色都取自 `GET https://<region>.tts.speech.microsoft.com/cognitiveservices/voices/list`；zh-CN 共 81 个，其中晓晓系 5 个（标准 / 高清一代 `zh-CN-Xiaoxiao:DragonHDFlashLatestNeural` / 高清二代 `zh-CN-Xiaoxiao2:DragonHDFlashLatestNeural` / 多语种 / 方言）。
