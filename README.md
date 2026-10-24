@@ -227,4 +227,8 @@ powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\.dsh\tts-stop.ps1"
 
 ## 说明
 
-本机工作区在 `E:\DeepSeek Harness`，profile 在 `%USERPROFILE%\.dsh\profiles\desktop`（用户名随机器变，别写死 `C:\Users\<名字>`）。所有脚本按运行时实际路径计算，不写死盘符，换机不用改。
+**文里的 `E:\DeepSeek Harness`、`C:\Program Files\...` 全是本机示例**，不是要求。工作区可以放在任何盘、任何目录，DSH 也可以装在任何位置。
+
+所有脚本按运行时实际路径计算（`$env:USERPROFILE`、`$env:ProgramFiles`、脚本自身所在目录），不写死盘符、不写死用户名，换机不用改任何一行。
+
+profile 固定在 `%USERPROFILE%\.dsh\profiles\desktop`（用户名随机器变，别写死 `C:\Users\<名字>`）。
