@@ -72,6 +72,43 @@ if (-not $dshHome) { $dshHome = Join-Path $env:USERPROFILE '.dsh' }
 $profileDir = Join-Path $dshHome (Join-Path 'profiles' $Profile)
 $profilePkg = Join-Path $profileDir 'package.json'
 
+# ---- 2b. locate the DSH CLI before touching anything -----------------------
+# Nothing here assumes a drive letter or a user name. If the CLI cannot be
+# found, stop and ask the user where DSH is installed; do not guess.
+function Find-Dsh {
+    $onPath = Get-Command dsh -ErrorAction SilentlyContinue
+    if ($onPath) { return $onPath.Source }
+    $candidates = @(
+        (Join-Path $env:ProgramFiles 'DeepSeek Harness\resources\runtime\cli\bin\dsh.cmd'),
+        (Join-Path ${env:ProgramFiles(x86)} 'DeepSeek Harness\resources\runtime\cli\bin\dsh.cmd'),
+        (Join-Path $env:LOCALAPPDATA 'Programs\DeepSeek Harness\resources\runtime\cli\bin\dsh.cmd'),
+        'D:\Program Files\DeepSeek Harness\resources\runtime\cli\bin\dsh.cmd'
+    )
+    foreach ($c in $candidates) { if ($c -and (Test-Path -LiteralPath $c)) { return $c } }
+    return $null
+}
+
+$dsh = $null
+$dshNote = 'skipped (-SkipInstall)'
+if (-not $SkipInstall) {
+    if ($DshPath) {
+        if (Test-Path -LiteralPath $DshPath) { $dsh = $DshPath } else { Fail "DshPath not found: $DshPath" }
+    } else {
+        $dsh = Find-Dsh
+    }
+    if ($dsh) {
+        $dshNote = $dsh
+    } else {
+        $dshNote = 'NOT FOUND - ask the user, then pass -DshPath'
+        if (-not $DryRun) {
+            Fail ("Cannot find the dsh CLI." + [Environment]::NewLine +
+                "  Looked in PATH, Program Files, Program Files (x86), LOCALAPPDATA\Programs and D:\Program Files." + [Environment]::NewLine +
+                "  Ask the user where DSH is installed, then re-run with:" + [Environment]::NewLine +
+                "  -DshPath '<install dir>\resources\runtime\cli\bin\dsh.cmd'")
+        }
+    }
+}
+
 # ---- 3. package list -------------------------------------------------------
 $packages = @()
 foreach ($prop in ($manifest.dependencies.PSObject.Properties | Sort-Object Name)) {
@@ -83,6 +120,7 @@ if ($DryRun) {
     Step "Plan for profile '$Profile' (dry run)"
     Write-Host "  DSH home : $dshHome"
     Write-Host "  Profile  : $profileDir"
+    Write-Host "  DSH CLI  : $dshNote"
     Write-Host "  Plugins  : $($packages.Count)"
     foreach ($p in $packages) { Info $p }
     Write-Host "  Bundles  : $(@($manifest.bundles).Count) entries"
@@ -97,25 +135,7 @@ if ($DryRun) {
 
 # ---- 4. install packages ---------------------------------------------------
 if (-not $SkipInstall) {
-    function Find-Dsh {
-        $onPath = Get-Command dsh -ErrorAction SilentlyContinue
-        if ($onPath) { return $onPath.Source }
-        $candidates = @(
-            'D:\Program Files\DeepSeek Harness\resources\runtime\cli\bin\dsh.cmd',
-            "$env:ProgramFiles\DeepSeek Harness\resources\runtime\cli\bin\dsh.cmd",
-            "${env:ProgramFiles(x86)}\DeepSeek Harness\resources\runtime\cli\bin\dsh.cmd",
-            "$env:LOCALAPPDATA\Programs\DeepSeek Harness\resources\runtime\cli\bin\dsh.cmd"
-        )
-        foreach ($c in $candidates) { if ($c -and (Test-Path $c)) { return $c } }
-        return $null
-    }
-
-    $dsh = if ($DshPath) { if (Test-Path $DshPath) { $DshPath } else { Fail "DshPath not found: $DshPath" } } else { Find-Dsh }
-    if (-not $dsh) {
-        Fail "dsh CLI not found. Start DSH once, or pass -DshPath <...>\cli\bin\dsh.cmd"
-    }
-    Step "DSH CLI: $dsh"
-    Step "Installing $($packages.Count) plugin(s) into profile '$Profile'"
+    Step "Installing $($packages.Count) plugin(s) into profile '$Profile' via $dsh"
     foreach ($p in $packages) { Info $p }
 
     & $dsh plugin --profile $Profile add @packages

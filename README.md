@@ -65,6 +65,14 @@ irm https://raw.githubusercontent.com/ctdlb/dsh-plugins/main/install.ps1 | iex
 powershell -ExecutionPolicy Bypass -File install.ps1 -DryRun
 ```
 
+**DSH 不在默认位置时**：脚本自己会去 PATH、`Program Files`、`Program Files (x86)`、`LOCALAPPDATA\Programs` 和常见的 D 盘位置找 `dsh.cmd`，并在 `-DryRun` 的输出里把找到的路径打出来（`DSH CLI : ...`）。一个都没找到就会停下并让加参数，不会盲装：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File install.ps1 -DshPath 'C:\Program Files\DeepSeek Harness\resources\runtime\cli\bin\dsh.cmd'
+```
+
+同理，配音脚本 `tts-start.ps1` 也自己找 `DeepSeek Harness.exe`（顺序：环境变量 `DSH_EXE` → Program Files → Program Files (x86) → `LOCALAPPDATA\Programs` → D 盘常见位置），找不到会提示设 `DSH_EXE`。
+
 **不管用哪种方式，装完都要完全退出 DSH（托盘图标 → 退出）再打开。** 插件只在启动时装配，关窗口不算退出。
 
 ---

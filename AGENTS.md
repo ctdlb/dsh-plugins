@@ -12,7 +12,7 @@
 - 为什么不备份配置：旧配置搬到新机器会把环境配坏 —— 已卸载插件的开关、过期的权限预设、不再适用的 pnpm 排除项都会写回去。插件装好后按当时的需要重新设一遍更安全。
 - 本机 profile：`%USERPROFILE%\.dsh\profiles\desktop`。仓库本地副本：工作区下的 `.dsh-plugins`（本机是 `E:\DeepSeek Harness\.dsh-plugins`）。
 - **远端仓库是唯一真源（用户 2026-10-23 定）**：本地副本只是工作拷贝。两者不一致时，一律用远端覆盖本地（`https://raw.githubusercontent.com/ctdlb/dsh-plugins/main/...`），不要拿本地去覆盖远端；覆盖前先备份被改的那个文件（`.bak`）。唯一例外是用户明确说「同步插件库」——那一次才把本机 profile 的状态写进远端，本地副本随之更新。
-- 用户说「**装回插件**」时：读 `plugins.json` → `dsh plugin --profile desktop add <包@版本…>` → 按清单把 `bundles` 顺序写回 profile 的 `package.json` → 校验 `node_modules` → 提示完全退出 DSH 再启动。**不要碰任何配置文件。**
+- 用户说「**装回插件**」时：**第 0 步先确认 DSH 装在哪**——自动探测（PATH、`Program Files`、`Program Files (x86)`、`LOCALAPPDATA\Programs`、常见的 D 盘位置），探测到就把路径报给用户确认；一个都没找到就**问用户**要安装目录，不要假定盘符、不要盲装；然后读 `plugins.json` → `dsh plugin --profile desktop add <包@版本…>` → 按清单把 `bundles` 顺序写回 profile 的 `package.json` → 校验 `node_modules` → 提示完全退出 DSH 再启动。`install.ps1` 会自动做这套探测，找不到时直接报错并要求 `-DshPath '<安装目录>\resources\runtime\cli\bin\dsh.cmd'`。**不要碰任何配置文件。**
 - 用户说「**同步插件库**」时：读 profile 的 `package.json`，重写仓库里的 `plugins.json`（`dependencies` 全量 + `bundles` 原顺序），推上去。配置文件一律不进仓库。
 - 推送走 `api.github.com`（Git Data API 一次原子提交），令牌从 Windows 凭据管理器 `git:https://ctdlb@github.com` 读，**不得写进文件、日志或提交内容**。
 - 新装插件、升级版本后要同步；仓库不含配置、会话记录、凭据与缓存。
